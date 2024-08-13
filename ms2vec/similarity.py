@@ -12,7 +12,7 @@ from numpy import ndarray
 import mindspore
 from mindspore import ops
 from mindspore import Tensor
-from mindnlp.modules.functional import normalize
+from mindnlp.core.nn.functional import normalize
 
 from .sentence_model import SentenceModel, EncoderType
 from .utils.distance import cosine_distance

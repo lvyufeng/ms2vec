@@ -20,7 +20,7 @@ from mindspore import ops
 from mindspore.dataset import Dataset
 
 from mindnlp.transformers import AutoTokenizer, AutoModel
-from mindnlp.modules.functional import normalize
+from mindnlp.core.nn.functional import normalize
 
 from .utils.stats_util import compute_spearmanr, compute_pearsonr
 
