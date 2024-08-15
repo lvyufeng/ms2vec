@@ -4,7 +4,7 @@ import sys
 from setuptools import setup, find_packages
 
 # Avoids IDE errors, but actual version is read from version.py
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 if sys.version_info < (3,):
     sys.exit('Sorry, Python3 is required.')
 

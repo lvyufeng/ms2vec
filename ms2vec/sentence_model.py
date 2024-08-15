@@ -16,8 +16,9 @@ from tqdm.autonotebook import trange
 
 import numpy as np
 import mindspore
-from mindspore import ops
 from mindspore.dataset import Dataset
+from mindnlp.core import ops
+from mindnlp.core.nn import functional as F
 
 from mindnlp.transformers import AutoTokenizer, AutoModel
 from mindnlp.core.nn.functional import normalize
@@ -107,17 +108,17 @@ class SentenceModel:
             last = model_output.hidden_states[-1]
             seq_length = first.shape[1]  # Sequence length
 
-            first_avg = ops.avg_pool1d(first.swapaxes(1, 2), kernel_size=seq_length).squeeze(-1)  # [batch, hid_size]
-            last_avg = ops.avg_pool1d(last.swapaxes(1, 2), kernel_size=seq_length).squeeze(-1)  # [batch, hid_size]
-            final_encoding = ops.avg_pool1d(
-                ops.cat([first_avg.unsqueeze(1), last_avg.unsqueeze(1)], axis=1).swapaxes(1, 2),
+            first_avg = F.avg_pool1d(ops.swapaxes(first, 1, 2), kernel_size=seq_length).squeeze(-1)  # [batch, hid_size]
+            last_avg = F.avg_pool1d(ops.swapaxes(last, 1, 2), kernel_size=seq_length).squeeze(-1)  # [batch, hid_size]
+            final_encoding = F.avg_pool1d(
+                ops.swapaxes(ops.cat([first_avg.unsqueeze(1), last_avg.unsqueeze(1)], dim=1), 1, 2),
                 kernel_size=2).squeeze(-1)
             return final_encoding
 
         if self.encoder_type == EncoderType.LAST_AVG:
             sequence_output = model_output.last_hidden_state  # [batch_size, max_len, hidden_size]
             seq_length = sequence_output.shape[1]
-            final_encoding = ops.avg_pool1d(sequence_output.swapaxes(1, 2), kernel_size=seq_length).squeeze(-1)
+            final_encoding = F.avg_pool1d(ops.swapaxes(sequence_output, 1, 2), kernel_size=seq_length).squeeze(-1)
             return final_encoding
 
         if self.encoder_type == EncoderType.CLS:
@@ -132,7 +133,7 @@ class SentenceModel:
             Mean Pooling - Take attention mask into account for correct averaging
             """
             token_embeddings = model_output.last_hidden_state  # Contains all token embeddings
-            input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.shape).float()
+            input_mask_expanded = attention_mask.unsqueeze(-1).broadcast_to(token_embeddings.shape).float()
             final_encoding = ops.sum(token_embeddings * input_mask_expanded, 1) / ops.clamp(
                 input_mask_expanded.sum(1), min=1e-9)
             return final_encoding  # [batch, hid_size]
@@ -243,7 +244,7 @@ class SentenceModel:
                                                              source_token_type_ids)
             target_embeddings = self.get_sentence_embeddings(target_input_ids, target_attention_mask,
                                                              target_token_type_ids)
-            preds = ops.cosine_similarity(source_embeddings, target_embeddings)
+            preds = F.cosine_similarity(source_embeddings, target_embeddings)
             batch_preds.extend(preds.asnumpy())
 
         spearman = compute_spearmanr(batch_labels, batch_preds)

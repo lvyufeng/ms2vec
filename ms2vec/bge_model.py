@@ -7,7 +7,8 @@ code modified from https://github.com/FlagOpen/FlagEmbedding
 """
 
 import mindspore
-from mindspore import ops
+from mindnlp.core import ops
+from mindnlp.core.nn import functional as F
 
 from .sentence_model import SentenceModel
 
@@ -45,7 +46,7 @@ class BgeModel(SentenceModel):
         """
         Calc loss with two sentence embeddings, Softmax loss
         """
-        loss = ops.cross_entropy(y_pred, y_true)
+        loss = F.cross_entropy(y_pred, y_true)
         return loss
 
     def calc_similarity(self, q_embs, p_embs):
@@ -53,8 +54,8 @@ class BgeModel(SentenceModel):
         Calc similarity with two sentence embeddings
         """
         if len(p_embs.shape) == 2:
-            return ops.matmul(q_embs, p_embs.swapaxes(0, 1))
-        return ops.matmul(q_embs, p_embs.swapaxes(-2, -1))
+            return ops.matmul(q_embs, ops.transpose(p_embs, 0, 1))
+        return ops.matmul(q_embs, ops.transpose(p_embs, -2, -1))
 
     @staticmethod
     def flat_list(l):

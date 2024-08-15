@@ -4,7 +4,7 @@
 @description: Create CoSENT model for text matching task
 """
 import mindspore
-from mindspore import ops
+from mindnlp.core import ops
 
 from .sentence_model import SentenceModel
 
@@ -38,7 +38,7 @@ class CosentModel(SentenceModel):
         # 1. 取出真实的标签
         y_true = y_true[::2]  # tensor([1, 0, 1]) 真实的标签
         # 2. 对输出的句子向量进行l2归一化   后面只需要对应为相乘  就可以得到cos值了
-        norms = (y_pred ** 2).sum(axis=1, keepdims=True) ** 0.5
+        norms = ops.sum((y_pred ** 2), dim=1, keepdim=True) ** 0.5
         y_pred = y_pred / norms
         # 3. 奇偶向量相乘, 相似度矩阵除以温度系数0.05(等于*20)
         y_pred = ops.sum(y_pred[::2] * y_pred[1::2], dim=1) * 20
@@ -50,5 +50,5 @@ class CosentModel(SentenceModel):
         y_pred = y_pred - (1 - y_true) * 1e12
         y_pred = y_pred.view(-1)
         # 这里加0是因为e^0 = 1相当于在log中加了1
-        y_pred = ops.cat((mindspore.tensor([0]).float(), y_pred), axis=0)
-        return ops.logsumexp(y_pred, axis=0)
+        y_pred = ops.cat((mindspore.tensor([0]).float(), y_pred), dim=0)
+        return ops.logsumexp(y_pred, dim=0)
